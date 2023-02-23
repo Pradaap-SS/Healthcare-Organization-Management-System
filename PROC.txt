@@ -1,0 +1,70 @@
+create or replace procedure bill_proc (x in number)
+as
+cursor c1 is select paystat from diagnosis
+	where pno is x;
+cursor c2 is select totamt from ralloc
+	where pno is x and paystat is 'Not Paid';
+temp1 varchar2(20);
+temp2 number;
+df number;
+rf number;
+tax number;
+tf number;
+begin
+	df:=0;
+	rf:=0;
+	open c1;
+	loop
+		fetch c1 into temp;
+		if(temp != 'Not Paid') then
+			df:= df+300;
+		end if;
+	end loop;
+	end c1;
+
+	open c2;
+	loop
+		fetch c2 into temp2;
+		rf:=rf+temp2;
+	end loop;
+	end c2;
+
+	tf:=df+rf;
+	tax:= 0.05*tf;
+	tf:= tf+tax;
+	insert into bill(pno,dfee,rfee,tax,total) values(x,df,rf,tax,tf);
+end;
+-------------------------------------------------------------------------
+create or replace procedure bill_proc (x in number)
+as
+df number;
+rf number;
+tax number;
+tf number;
+begin
+	select count(0)*300
+	into df
+	from diagnosis
+	where pno=x
+	and paystat='Not Paid';
+
+	select sum(totamt)
+	into rf
+	from ralloc
+	where pno=x
+	and paystat = 'Not Paid';
+
+	tf:=df+rf;
+	tax:= 0.05*tf;
+	tf:= tf+tax;
+
+	if(tf != 0) then
+	insert into bill(pno,dfee,rfee,tax,total,pmode) values(x,df,rf,tax,tf,'N/A');
+	end if;
+end;
+/
+select bno from bill 
+	where pno=x
+	 and pmode='N/A';
+
+select * from bill;
